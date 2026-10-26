@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TACIT — TAckling Chemistry through ImpliciT negative learning</title>
+  <meta name="description" content="TACIT: reaction outcome prediction via bond-pair ranking over elementary mechanistic steps. Predicts whether a reaction occurs, learning implicit negatives from positive-only data." />
+  <meta property="og:title" content="TACIT — TAckling Chemistry through ImpliciT negative learning" />
+  <meta property="og:description" content="Forward reaction prediction at the level of elementary mechanistic steps." />
+  <meta property="og:image" content="static/images/human_vs_tacit.png" />
+  <link rel="stylesheet" href="static/css/style.css" />
+</head>
+<body>
+
+  <header class="hero">
+    <div class="wrap">
+      <h1 class="title"><span class="acronym">TACIT</span></h1>
+      <p class="subtitle">TAckling Chemistry through ImpliciT negative learning</p>
+      <p class="authors">
+        <a href="mailto:nwierich@uni-muenster.de">Nick Wierich</a><sup>*</sup>,
+        <a href="mailto:niklas.dobberstein@uni-muenster.de">Niklas Dobberstein</a><sup>*</sup>,
+        <a href="mailto:glorius@uni-muenster.de">Frank Glorius</a><sup>&dagger;</sup>
+      </p>
+      <p class="affil">Organisch-Chemisches-Institut, Universität Münster, 48149 Münster, Germany</p>
+      <p class="affil"><sup>*</sup> These authors contributed equally. &nbsp;&middot;&nbsp; <sup>&dagger;</sup> Corresponding author.</p>
+      <nav class="links">
+        <a class="btn" href="#"><span class="ico">&#128196;</span> Paper</a>
+        <a class="btn ghost" href="https://github.com/GloriusGroup/tacit" target="_blank" rel="noopener"><span class="ico">&#60;/&#62;</span> Code</a>
+        <a class="btn ghost" href="https://doi.org/10.5281/zenodo.23669984" target="_blank" rel="noopener"><span class="ico">&#128230;</span> Models &amp; data (Zenodo)</a>
+        <a class="btn ghost" href="#bibtex"><span class="ico">&#10078;</span> BibTeX</a>
+      </nav>
+
+      <figure class="hero-fig plain">
+        <img src="static/images/human_vs_tacit.png" alt="Human chemical intuition versus conventional ML versus TACIT" />
+      </figure>
+    </div>
+  </header>
+
+  <section id="abstract">
+    <div class="wrap">
+      <h2>Abstract</h2>
+      <p class="lead">Machine learning models for reaction product prediction have largely been trained and evaluated on datasets of successful reactions. While this setting allows reaching high accuracy scores, these models generally struggle to discriminate between successful and unsuccessful transformations due to the lack of negative training data. This critically limits their practical use, as reliably recognizing unproductive substrate combinations <em>in silico</em> is required to accelerate experimental campaigns and save resources in the laboratory.</p>
+      <p>While the availability of negative reaction data remains limited to date, we show that even purely positive datasets implicitly contain a significant amount of information about cases in which no reaction occurs. To exploit this, we introduce TACIT (TAckling Chemistry through ImpliciT negative learning). While trained on positive-only data, TACIT learns to distinguish between productive and unproductive transformations. On two published high-throughput experimentation datasets, it outperforms all evaluated reaction outcome prediction models in separating successful from failed reactions.</p>
+      <p>Crucially, TACIT&rsquo;s accuracy on the popular USPTO-MIT benchmark remains competitive, despite its added ability to predict negative reaction outcomes.</p>
+    </div>
+  </section>
+
+  <section id="results-stats">
+    <div class="wrap">
+      <h2>Key results</h2>
+      <p style="text-align:center; color:var(--muted); max-width:760px; margin:-8px auto 22px; font-size:15px;">
+        TACIT, trained on the blockspace-filtered USPTO-MIT training set and evaluated on the full, unfiltered test sets.
+      </p>
+      <div class="stats">
+        <div class="stat"><div class="num">0.80</div><div class="lbl">ROC-AUC for separating successful from failed wells (Chemlex, 11,669 wells)</div></div>
+        <div class="stat"><div class="num">0.61</div><div class="lbl">ROC-AUC for separating successful from failed wells (AIChemEco, 47,015 wells)</div></div>
+        <div class="stat"><div class="num">77.8%</div><div class="lbl">Top-1 accuracy on the USPTO-MIT test set (40,000 reactions)</div></div>
+      </div>
+      <p class="lead" style="text-align:center; color:var(--muted); max-width:760px; margin:0 auto;">
+        Trained on positive reactions only, TACIT separates successful from failed reactions better than all evaluated reaction outcome prediction models on both HTE datasets, while its top-1 accuracy on USPTO-MIT remains competitive.
+      </p>
+    </div>
+  </section>
+
+  <section id="method">
+    <div class="wrap">
+      <h2>How it works</h2>
+      <p class="lead">A reaction is decomposed into <b>elementary steps</b>. In each step two bonds break and two new bonds form &mdash; a bond swap &mdash; while electrons and atoms are conserved. The model ranks candidate bond pairs against a learned <b>stop action</b>, predicting both <em>what</em> reacts and <em>whether</em> anything reacts at all.</p>
+
+      <figure>
+        <img src="static/images/bond_swaps.png" alt="Elementary bond-swap step: two bonds break, four loose ends, two reconnection patterns" />
+        <figcaption><b>Elementary step:</b> Breaking two bonds yields four loose ends; valid reconnections define the bond-swap space the model ranks over.</figcaption>
+      </figure>
+
+      <figure>
+        <img src="static/images/model_overview.png" alt="TACIT architecture: GATv2 encoder, bond Transformer with MoE and attention residuals, prediction heads" />
+        <figcaption><b>Architecture:</b> A GATv2 molecular encoder feeds a bond-level Transformer with Mixture-of-Experts layers and attention-weighted residual connections, followed by pair-scoring, stop, and swap-type heads.</figcaption>
+      </figure>
+
+      <figure>
+        <img src="static/images/blockspace_filtered.png" alt="Blockspace decomposition and reaction filtering using Bond-Electron matrices" />
+        <figcaption><b>Blockspace:</b> Bond-Electron matrix algebra decomposes reactions into minimal step sequences and filters chemically impossible entries during preprocessing.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section id="example">
+    <div class="wrap">
+      <h2>Step-wise inference</h2>
+      <p class="lead">TACIT applies one elementary step at a time, feeding each predicted intermediate back as input, so arbitrarily complex reactions are covered by iteration. TACIT is <em>not</em> designed or trained to predict reaction mechanisms: the shortest-step decomposition does not necessarily match the true chemical mechanism.</p>
+      <figure>
+        <img src="static/images/inference_triphosgene.png" alt="Multi-step reaction predicted by TACIT" />
+        <figcaption><b>Example of TACIT predicting a multi-step reaction:</b> In this case, the prediction proceeds via a chemically reasonable mechanism, despite the model not being explicitly designed or trained to predict mechanisms.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section id="bibtex">
+    <div class="wrap">
+      <h2>BibTeX</h2>
+      <pre class="bibtex">@article{tacit,
+  title  = {Implicit Learning: Reaction Outcome Prediction from Positive-Only Data},
+  author = {Wierich, Nick and Dobberstein, Niklas and Glorius, Frank},
+  year   = {2026},
+  note   = {TACIT: TAckling Chemistry through ImpliciT negative learning}
+}</pre>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">
+      <p><a href="https://github.com/GloriusGroup/tacit" target="_blank" rel="noopener">Code on GitHub</a> &middot; <a href="https://doi.org/10.5281/zenodo.23669984" target="_blank" rel="noopener">Models and data on Zenodo</a></p>
+    </div>
+  </footer>
+
+</body>
+</html>

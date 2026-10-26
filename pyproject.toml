@@ -1,0 +1,67 @@
+[project]
+name = "bond-match"
+version = "1.0.0"
+description = "TACIT: reaction outcome prediction via bond-pair ranking over elementary mechanistic steps."
+readme = "README.md"
+authors = [
+    { name = "Nick Wierich", email = "nwierich@uni-muenster.de" },
+    { name = "Niklas Dobberstein", email = "niklas.dobberstein@uni-muenster.de" },
+    { name = "Frank Glorius", email = "glorius@uni-muenster.de" },
+]
+license = "MIT"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "torch==2.6",
+    "torch-geometric",
+    "rdkit>=2025.9.3",
+    "numpy",
+    "scipy<1.15",
+    "scikit-learn",
+    "networkx",
+    "pandas",
+    "pyyaml",
+    "tqdm",
+    "pydantic",
+    "mlflow",
+    "einops>=0.8.2",
+    "einx>=0.4.2",
+    "beartype>=0.22.9",
+    "colt5-attention>=0.11.1",
+    "st-moe-pytorch>=0.1.8",
+    "setuptools<75",
+]
+
+[dependency-groups]
+dev = ["pytest>=8.0"]
+
+[tool.uv]
+# Define the PyTorch index for CUDA support.
+# explicit = true prevents uv from trying this index for non-torch packages.
+[[tool.uv.index]]
+name = "pytorch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
+explicit = true
+
+# PyG wheel index for optimized kernels (pyg_lib, torch_scatter, ...).
+[[tool.uv.index]]
+name = "pyg-wheels"
+url = "https://data.pyg.org/whl/torch-2.6.0+cu124.html"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu124" }
+
+[build-system]
+requires = ["uv_build>=0.9.15,<0.10.0"]
+build-backend = "uv_build"
+
+[tool.uv.extra-build-dependencies]
+torch-cluster = ["torch"]
+
+[tool.pytest.ini_options]
+# Test the in-tree release copy (src layout) rather than any installed package.
+pythonpath = ["src"]
+testpaths = ["tests"]
+markers = [
+    "slow: marks tests that require larger datasets or expensive preprocessing",
+]

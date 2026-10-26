@@ -1,0 +1,107 @@
+"""Reaction dataset package.
+
+Re-exports the public API of the constants, metadata, molecular-graph,
+processing, dataset, and collation submodules.
+"""
+
+from bond_match.dataset.constants import (
+    _logger,
+    _original_mol_to_smiles,
+    BASE_DIR,
+    ATOM_MAX_NUM,
+    BOND_TYPE_MAP,
+    BOND_ORDER_TO_TYPE,
+    NUM_BOND_TYPES,
+    _ELEMENT_TO_ATOMIC_NUM,
+    PT,
+    SHARD_SAMPLE_LIMIT,
+    custom_mol_to_smiles,
+)
+from bond_match.dataset.metadata import (
+    SampleMetadata,
+    _coerce_sample_metadata,
+    _dataset_cache_prefix,
+    _sample_tensors_to_numpy,
+    _sample_numpy_to_tensors,
+    _trajectory_numpy_to_tensors,
+    _extract_entry_yield,
+)
+from bond_match.dataset.mol_graph import (
+    canonicalize_mol_ordering,
+    connect_components_with_head,
+    mol_to_nx,
+    nx_to_mol,
+    smiles_match,
+    find_atom_by_identifier,
+    parse_v3_atom_label,
+    _get_atomic_num,
+    find_atom_by_v3_label,
+    _be_to_nx,
+    apply_elemental_step,
+    get_graph_features_nx,
+    augment_with_lp_edges,
+)
+from bond_match.dataset.processing import (
+    _process_v3_mechanism,
+    prepare_v3_reactant,
+    _process_negative_reaction,
+    _is_reactant_equals_product,
+    process_reaction_entry_v3,
+    process_reaction_entry_v3_trajectory,
+    process_reaction_entry,
+)
+from bond_match.dataset.datasets import (
+    ReactionDataset,
+    ShardedReactionDataset,
+    ShardAwareSampler,
+)
+from bond_match.dataset.collate import (
+    collate_fn,
+    trajectory_collate_fn,
+)
+
+__all__ = [
+    '_logger',
+    '_original_mol_to_smiles',
+    'BASE_DIR',
+    'ATOM_MAX_NUM',
+    'BOND_TYPE_MAP',
+    'BOND_ORDER_TO_TYPE',
+    'NUM_BOND_TYPES',
+    '_ELEMENT_TO_ATOMIC_NUM',
+    'PT',
+    'SHARD_SAMPLE_LIMIT',
+    'custom_mol_to_smiles',
+    'SampleMetadata',
+    '_coerce_sample_metadata',
+    '_dataset_cache_prefix',
+    '_sample_tensors_to_numpy',
+    '_sample_numpy_to_tensors',
+    '_trajectory_numpy_to_tensors',
+    '_extract_entry_yield',
+    'canonicalize_mol_ordering',
+    'connect_components_with_head',
+    'mol_to_nx',
+    'nx_to_mol',
+    'smiles_match',
+    'find_atom_by_identifier',
+    'parse_v3_atom_label',
+    '_get_atomic_num',
+    'find_atom_by_v3_label',
+    '_be_to_nx',
+    'apply_elemental_step',
+    'get_graph_features_nx',
+    'augment_with_lp_edges',
+    '_process_v3_mechanism',
+    'prepare_v3_reactant',
+    '_process_negative_reaction',
+    '_is_reactant_equals_product',
+    'process_reaction_entry_v3',
+    'process_reaction_entry_v3_trajectory',
+    'process_reaction_entry',
+    'ReactionDataset',
+    'ShardedReactionDataset',
+    'ShardAwareSampler',
+    'collate_fn',
+    'trajectory_collate_fn',
+]

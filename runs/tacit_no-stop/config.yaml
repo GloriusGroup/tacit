@@ -1,0 +1,71 @@
+detection_type: "ranking"
+experiment_name: "tacit_no-stop"
+save_checkpoint_dir: "runs/tacit_no-stop/checkpoints"
+
+model:
+  embed_dim: 384
+  num_heads: 8
+  num_layers: 4
+  transformer_layers: 4
+  hidden_dim: 384
+  atom_max_num: 100
+  num_bond_types: 7
+  use_pair_bond_type: true
+  use_max_pool_virtual: true
+  use_attention_pair_scorer: true
+  use_symmetric_pair_scorer: true
+  residual_connection_type: "block_attnres"
+  attnres_block_size: 6
+  use_attention_pool_virtual: true
+  trajectory_attention: true
+  pair_score_backend: "exact_attention_chunked"
+  pair_score_chunk_size: 512
+  use_moe: true
+  moe_num_experts: 8
+  moe_top_k: 2
+  moe_loss_coef: 0.01
+  drop_head_bond_tokens_after_gnn: true
+
+loss:
+  ranking_loss_type: "ebm"
+  lambda_anchor: 0.05
+  train_no_reaction_class: false
+  pair_scoring_mode: "fused"
+  beta: 0.5
+  bond_type_weight: 0.8
+  label_smoothing: 0.1
+  stop_rank_aux_weight: 0.0
+
+train:
+  batch_size: 16
+  epochs: 50
+  learning_rate: 0.0002
+  weight_decay: 0.1
+  warmup_batches: 100
+  eta_min: 0.00005
+  gradient_accumulation_steps: 1
+  gradient_clip: 1.0
+  use_scheduler: true
+  scheduler_type: "cosine"
+  dtype: "bfloat16"
+  num_gpus: 4
+  num_dataloader_workers: 4
+  pin_memory: true
+  persistent_workers: true
+  prefetch_factor: 2
+
+eval:
+  max_eval_steps: 5
+  eval_beam_width: 1
+
+data:
+  data_version: "v3_blockspace"
+  train_path: "data/uspto_mit/train.jsonl"
+  test_path: "data/uspto_mit/test.jsonl"
+  force_recalculate_cache: false
+  shard_size: 100000
+  test_limit: null
+  include_product: true
+  enable_blockspace_product: true
+  sample_mode: "trajectory"
+  multistep_oversampling_factor: 3.0
