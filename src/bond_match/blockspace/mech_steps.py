@@ -72,29 +72,25 @@ def extract_changes(
     """
     NO_LP = {1, 6}
 
-    n = len(r_matrix)
     sources, sinks = [], []
 
-    for i in range(n):
-        for j in range(i, n):
-            val = r_matrix[i, j]
-            if abs(val) < tol:
+    rows, cols = np.nonzero(np.triu(np.abs(r_matrix) >= tol))
+    for i, j in zip(rows.tolist(), cols.tolist()):
+        val = float(r_matrix[i, j])
+        if i == j:
+            if atoms is not None and int(atoms[i][1]) in NO_LP:
                 continue
+            unit = 2.0 if val > 0 else -2.0
+            count = int(round(abs(val) / 2))
+        else:
+            unit = 1.0 if val > 0 else -1.0
+            count = int(round(abs(val)))
 
-            if i == j:
-                if atoms is not None and int(atoms[i][1]) in NO_LP:
-                    continue
-                unit = 2.0 if val > 0 else -2.0
-                count = int(round(abs(val) / 2))
+        for _ in range(count):
+            if unit < 0:
+                sources.append((i, j, unit))
             else:
-                unit = 1.0 if val > 0 else -1.0
-                count = int(round(abs(val)))
-
-            for _ in range(count):
-                if unit < 0:
-                    sources.append((i, j, unit))
-                else:
-                    sinks.append((i, j, unit))
+                sinks.append((i, j, unit))
 
     return sources, sinks
 

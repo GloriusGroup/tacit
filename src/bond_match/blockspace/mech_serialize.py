@@ -115,7 +115,7 @@ def serialize_mechanism(
     return {
         "reaction_smiles": rxn_smiles,
         "reaction_smiles_mapped": f"{mapped_sub}>>{mapped_prod}",
-        "success": True,
+        "success": num_steps > 0,
         "num_steps": num_steps,
         "num_mechanisms": len(mechanisms),
         "mechanisms": mechanisms,

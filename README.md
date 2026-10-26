@@ -73,6 +73,28 @@ training. The archive's README describes the data fields and the blockspace
 filter (`success` and 1 to 4 elementary steps) that selects the 334,510 training
 reactions.
 
+### Regenerating the blockspace data
+
+The decompositions were computed with `src/bond_match/blockspace/batch.py`
+from the atom-mapped USPTO-MIT reactions, which every record keeps in
+`metadata.rxn_smiles_original`:
+
+```bash
+python -c "import json, pandas as pd; pd.DataFrame({'rxn_smiles': [json.loads(l)['metadata']['rxn_smiles_original'] for l in open('data/uspto_mit/test.jsonl')]}).to_csv('test.csv', index=False)"
+
+python src/bond_match/blockspace/batch.py test.csv -c rxn_smiles -o test_blockspace.jsonl \
+  --strict --mixed --remove_stereo --clean-coo -w 32 -t 10
+```
+
+`--drop-single-reactant` and `--drop-single-molecule-steps` were not used.
+Records are written in completion order. A rerun reproduces about 99.9% of
+the records exactly: the 10 s timeout per reaction (`-t 10`) depends on machine
+speed, so a few slow reactions can succeed or fail differently. The released
+files predate a fix that marks reactions with zero steps as unsuccessful, so
+267 of their records have `success` set to true with `num_steps` 0. The
+blockspace filter (1 to 4 steps) excludes them either way. Results depend on
+the RDKit version, which is pinned to 2025.9.3.
+
 The Zenodo record also contains the retrained baseline models (MEGAN, Molecular
 Transformer, LocalTransform and ReactionT5), each with its upstream license and
 a note on how it was trained.
@@ -170,7 +192,7 @@ src/bond_match/
 ├── model/                  # BondGAT encoder, Transformer, heads, scorers
 ├── modules/                # MoE, attention residuals, LoRA, Muon optimizer, mHC
 ├── losses/                 # pair-ranking and energy-based losses
-├── blockspace/             # Bond-Electron matrix algebra and reaction decomposition
+├── blockspace/             # Bond-Electron matrix algebra, reaction decomposition, batch.py
 ├── dataset/                # sharded dataset: molecular graphs, reaction processing, collate
 ├── config.py               # RankingConfig schema and YAML loader
 └── sampler.py              # shard-aware and weighted sampling
