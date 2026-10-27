@@ -130,7 +130,7 @@ class Trainer:
 
         if self.use_ddp and not is_main_process():
             dist.barrier()
-        self.train_loader, self.test_loader = self._build_dataloaders()
+        self.train_loader, self.val_loader = self._build_dataloaders()
         if self.use_ddp and is_main_process():
             dist.barrier()
 
@@ -740,16 +740,16 @@ class Trainer:
         self._deferred_checkpoint = None
 
     def _build_dataloaders(self) -> tuple[DataLoader, DataLoader]:
-        """Build train and test dataloaders over the sharded reaction datasets.
+        """Build train and validation dataloaders over the sharded reaction datasets.
 
         Selects the collate function by sample mode (step vs. trajectory) and
         a weighted sampler when photo or multistep oversampling is enabled.
         Under DDP a (weighted) distributed sampler shards the training set,
-        while the test loader covers the full dataset because only rank 0
+        while the validation loader covers the full dataset because only rank 0
         evaluates. Dataloader workers are seeded from the torch initial seed.
 
         Returns:
-            tuple[DataLoader, DataLoader]: Train and test loaders.
+            tuple[DataLoader, DataLoader]: Train and validation loaders.
         """
         cfg = self.config
         if not cfg.include_product and is_main_process():
@@ -781,10 +781,10 @@ class Trainer:
             enable_blockspace_product=cfg.enable_blockspace_product,
             sample_mode=sample_mode,
         )
-        test_dataset = ShardedReactionDataset(
-            cfg.test_path,
+        val_dataset = ShardedReactionDataset(
+            cfg.val_path,
             include_product=cfg.include_product,
-            limit=cfg.test_limit,
+            limit=cfg.val_limit,
             force_recalculate_cache=force_recalculate_cache,
             extended_features=cfg.extended_atom_features,
             data_version=dv,
@@ -867,15 +867,15 @@ class Trainer:
             **sampling_kwargs,
             **loader_kwargs,
         )
-        test_loader = DataLoader(
-            test_dataset,
+        val_loader = DataLoader(
+            val_dataset,
             batch_size=cfg.batch_size,
             shuffle=False,
             collate_fn=collate,
             **loader_kwargs,
         )
 
-        return train_loader, test_loader
+        return train_loader, val_loader
 
     def _build_train_sampler(
         self,
@@ -1017,7 +1017,7 @@ class Trainer:
         """Log epoch-level training and evaluation metrics to MLflow."""
         log_dict = {
             "train_loss": train_loss,
-            "test_loss": metrics.test_loss,
+            "val_loss": metrics.val_loss,
             "learning_rate": lr,
             "mrr": metrics.mrr,
             "top1": metrics.top1,
@@ -1180,7 +1180,7 @@ class Trainer:
                     "intra_mrr": metrics.mrr,
                     "intra_top1": metrics.top1,
                     "intra_stop_acc": metrics.stop_acc,
-                    "intra_test_loss": metrics.test_loss,
+                    "intra_val_loss": metrics.val_loss,
                 },
                 step=global_step,
             )
@@ -1724,7 +1724,7 @@ class Trainer:
         return history_context, history_mask
 
     def evaluate(self) -> EvalMetrics:
-        """Evaluate ranking metrics and test loss over the test loader.
+        """Evaluate ranking metrics and loss over the validation loader.
 
         Uses EMA weights when EMA is enabled.
 
@@ -1732,8 +1732,8 @@ class Trainer:
             Aggregated evaluation metrics from the EvalCollector.
         """
         if self.config.enable_history_context:
-            assert self.test_loader.collate_fn.keywords.get("enable_history", False), (
-                "Model has enable_history_context=True but test dataloader was built "
+            assert self.val_loader.collate_fn.keywords.get("enable_history", False), (
+                "Model has enable_history_context=True but validation dataloader was built "
                 "without enable_history — history context would be silently dropped"
             )
 
@@ -1747,7 +1747,7 @@ class Trainer:
 
             with torch.no_grad():
                 for batch in tqdm(
-                    self.test_loader, desc="Evaluating", disable=not is_main_process()
+                    self.val_loader, desc="Evaluating", disable=not is_main_process()
                 ):
                     inputs = BatchInputs.from_batch(batch, self.device)
                     out = self._forward(inputs)
@@ -1767,7 +1767,7 @@ class Trainer:
     def _eval_batch(
         self, out: dict, inputs: BatchInputs, collector: EvalCollector
     ) -> None:
-        """Collect ranking, stop, and bond-type metrics for one test batch.
+        """Collect ranking, stop, and bond-type metrics for one validation batch.
 
         Per molecule, all pair scores plus the stop logit are ranked; stop
         accuracy is recorded for every molecule, while ranking and bond-type

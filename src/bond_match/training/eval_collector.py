@@ -89,7 +89,7 @@ class EvalCollector:
 
         Reports bond classification, ranking metrics (MRR, top-k accuracy),
         similarity separation (Cohen's d), bond-type accuracy, stop-action
-        accuracy, and average test loss, each only when the corresponding
+        accuracy, and average validation loss, each only when the corresponding
         data was collected.
 
         Returns:
@@ -172,13 +172,13 @@ class EvalCollector:
             )
 
         if self.loss_count > 0:
-            metrics.test_loss = self.loss_sum / self.loss_count
-            print(f"\n--- Test Loss ---")
-            print(f"Avg Loss: {metrics.test_loss:.4f}")
+            metrics.val_loss = self.loss_sum / self.loss_count
+            print(f"\n--- Validation Loss ---")
+            print(f"Avg Loss: {metrics.val_loss:.4f}")
             if self.nonfinite_loss_count > 0:
                 print(f"Skipped {self.nonfinite_loss_count} non-finite loss batches")
         elif self.nonfinite_loss_count > 0:
-            print(f"\n--- Test Loss ---")
+            print(f"\n--- Validation Loss ---")
             print("Avg Loss: unavailable (no finite loss batches)")
             print(f"Skipped {self.nonfinite_loss_count} non-finite loss batches")
 

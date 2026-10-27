@@ -24,7 +24,7 @@ class EvalMetrics:
     bond_type_acc: float = 0.0
     sim_separation: float = 0.0
     stop_acc: float = 0.0
-    test_loss: float = 0.0
+    val_loss: float = 0.0
 
     @property
     def virtual_acc(self) -> float:

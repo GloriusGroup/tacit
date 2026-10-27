@@ -4,17 +4,20 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>TACIT — TAckling Chemistry through ImpliciT negative learning</title>
-  <meta name="description" content="TACIT: reaction outcome prediction via bond-pair ranking over elementary mechanistic steps. Predicts whether a reaction occurs, learning implicit negatives from positive-only data." />
+  <meta name="description" content="While trained on positive-only data, TACIT learns to distinguish between productive and unproductive transformations." />
   <meta property="og:title" content="TACIT — TAckling Chemistry through ImpliciT negative learning" />
-  <meta property="og:description" content="Forward reaction prediction at the level of elementary mechanistic steps." />
-  <meta property="og:image" content="static/images/human_vs_tacit.png" />
+  <meta property="og:description" content="While trained on positive-only data, TACIT learns to distinguish between productive and unproductive transformations." />
+  <meta property="og:image" content="static/images/pbox.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral+SC:wght@600&family=Spectral:ital,wght@0,600;1,400&display=swap" />
   <link rel="stylesheet" href="static/css/style.css" />
 </head>
 <body>
 
   <header class="hero">
     <div class="wrap">
-      <h1 class="title"><span class="acronym">TACIT</span></h1>
+      <h1 class="title" aria-label="TACIT"><span class="acronym">Tacit</span></h1>
       <p class="subtitle">TAckling Chemistry through ImpliciT negative learning</p>
       <p class="authors">
         <a href="mailto:nwierich@uni-muenster.de">Nick Wierich</a><sup>*</sup>,
@@ -31,7 +34,7 @@
       </nav>
 
       <figure class="hero-fig plain">
-        <img src="static/images/human_vs_tacit.png" alt="Human chemical intuition versus conventional ML versus TACIT" />
+        <img src="static/images/pbox.png" alt="Positive reaction data is abundant, negative data is limited. TACIT predicts negative outcomes by implicit learning from positive-only data." />
       </figure>
     </div>
   </header>
@@ -45,53 +48,33 @@
     </div>
   </section>
 
-  <section id="results-stats">
+  <section id="results">
     <div class="wrap">
-      <h2>Key results</h2>
-      <p style="text-align:center; color:var(--muted); max-width:760px; margin:-8px auto 22px; font-size:15px;">
-        TACIT, trained on the blockspace-filtered USPTO-MIT training set and evaluated on the full, unfiltered test sets.
-      </p>
-      <div class="stats">
-        <div class="stat"><div class="num">0.80</div><div class="lbl">ROC-AUC for separating successful from failed wells (Chemlex, 11,669 wells)</div></div>
-        <div class="stat"><div class="num">0.61</div><div class="lbl">ROC-AUC for separating successful from failed wells (AIChemEco, 47,015 wells)</div></div>
-        <div class="stat"><div class="num">77.8%</div><div class="lbl">Top-1 accuracy on the USPTO-MIT test set (40,000 reactions)</div></div>
+      <h2>Results</h2>
+      <div class="table-wrap">
+      <table class="results">
+        <thead>
+          <tr><th rowspan="2">Model</th><th>USPTO-MIT</th><th colspan="2"><a href="https://doi.org/10.1038/s41467-025-59812-0" target="_blank" rel="noopener">Chemlex</a></th><th colspan="2"><a href="https://doi.org/10.1039/d5sc03364k" target="_blank" rel="noopener">AIChemEco</a></th></tr>
+          <tr><th>Top-1 [%]</th><th>ROC-AUC</th><th>PR-AUC</th><th>ROC-AUC</th><th>PR-AUC</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>TACIT</td><td>77.8</td><td><b>0.80</b></td><td><b>0.56</b></td><td><b>0.61</b></td><td><b>0.69</b></td></tr>
+          <tr><td><a href="https://doi.org/10.1021/acs.jcim.1c00537" target="_blank" rel="noopener">MEGAN</a><sup>a</sup></td><td>80.5</td><td>0.69</td><td>0.38</td><td>0.47</td><td>0.56</td></tr>
+          <tr><td><a href="https://doi.org/10.1038/s41586-025-09426-9" target="_blank" rel="noopener">FlowER</a><sup>b</sup></td><td>42.8</td><td>0.50</td><td>0.26</td><td>0.51</td><td>0.60</td></tr>
+          <tr><td><a href="https://doi.org/10.1021/acscentsci.9b00576" target="_blank" rel="noopener">Molecular Transformer</a><sup>a,d</sup></td><td>81.7</td><td>0.68</td><td>0.42</td><td>0.51</td><td>0.61</td></tr>
+          <tr><td><a href="https://doi.org/10.1038/s42256-022-00526-z" target="_blank" rel="noopener">LocalTransform</a><sup>a,d</sup></td><td>80.4</td><td>0.64</td><td>0.37</td><td>0.51</td><td>0.59</td></tr>
+          <tr><td><a href="https://doi.org/10.1186/s13321-025-01075-4" target="_blank" rel="noopener">ReactionT5</a><sup>a,c,d</sup></td><td><b>95.1</b><sup>e</sup></td><td>0.69</td><td>0.41</td><td>0.47</td><td>0.58</td></tr>
+        </tbody>
+      </table>
       </div>
-      <p class="lead" style="text-align:center; color:var(--muted); max-width:760px; margin:0 auto;">
-        Trained on positive reactions only, TACIT separates successful from failed reactions better than all evaluated reaction outcome prediction models on both HTE datasets, while its top-1 accuracy on USPTO-MIT remains competitive.
-      </p>
-    </div>
-  </section>
-
-  <section id="method">
-    <div class="wrap">
-      <h2>How it works</h2>
-      <p class="lead">A reaction is decomposed into <b>elementary steps</b>. In each step two bonds break and two new bonds form &mdash; a bond swap &mdash; while electrons and atoms are conserved. The model ranks candidate bond pairs against a learned <b>stop action</b>, predicting both <em>what</em> reacts and <em>whether</em> anything reacts at all.</p>
-
-      <figure>
-        <img src="static/images/bond_swaps.png" alt="Elementary bond-swap step: two bonds break, four loose ends, two reconnection patterns" />
-        <figcaption><b>Elementary step:</b> Breaking two bonds yields four loose ends; valid reconnections define the bond-swap space the model ranks over.</figcaption>
-      </figure>
-
-      <figure>
-        <img src="static/images/model_overview.png" alt="TACIT architecture: GATv2 encoder, bond Transformer with MoE and attention residuals, prediction heads" />
-        <figcaption><b>Architecture:</b> A GATv2 molecular encoder feeds a bond-level Transformer with Mixture-of-Experts layers and attention-weighted residual connections, followed by pair-scoring, stop, and swap-type heads.</figcaption>
-      </figure>
-
-      <figure>
-        <img src="static/images/blockspace_filtered.png" alt="Blockspace decomposition and reaction filtering using Bond-Electron matrices" />
-        <figcaption><b>Blockspace:</b> Bond-Electron matrix algebra decomposes reactions into minimal step sequences and filters chemically impossible entries during preprocessing.</figcaption>
-      </figure>
-    </div>
-  </section>
-
-  <section id="example">
-    <div class="wrap">
-      <h2>Step-wise inference</h2>
-      <p class="lead">TACIT applies one elementary step at a time, feeding each predicted intermediate back as input, so arbitrarily complex reactions are covered by iteration. TACIT is <em>not</em> designed or trained to predict reaction mechanisms: the shortest-step decomposition does not necessarily match the true chemical mechanism.</p>
-      <figure>
-        <img src="static/images/inference_triphosgene.png" alt="Multi-step reaction predicted by TACIT" />
-        <figcaption><b>Example of TACIT predicting a multi-step reaction:</b> In this case, the prediction proceeds via a chemically reasonable mechanism, despite the model not being explicitly designed or trained to predict mechanisms.</figcaption>
-      </figure>
+      <p class="note">USPTO-MIT: all 40,000 test reactions. HTE datasets: all 11,669 (Chemlex) and 47,015 (AIChemEco) wells. A well is positive if its conversion or yield is at least 20%, and negative otherwise.</p>
+      <ol class="notes">
+        <li><sup>a</sup> Retrained on the blockspace-filtered USPTO-MIT training set used for TACIT.</li>
+        <li><sup>b</sup> Published checkpoint. Not retrained, since a mechanistic dataset is required for training.</li>
+        <li><sup>c</sup> Pretrained on the Open Reaction Database.</li>
+        <li><sup>d</sup> No stop action. The confidence of the top-1 prediction is used as the score.</li>
+        <li><sup>e</sup> 34,552 of the 40,000 test reactions (86.4%) are contained in the ORD pretraining data. The top-1 accuracy is 97.5% on these and 80.4% on the remaining 5,448 reactions.</li>
+      </ol>
     </div>
   </section>
 

@@ -223,9 +223,11 @@ class DataConfig(BaseModel):
     """Dataset paths and loading parameters."""
 
     train_path: str = ""
+    val_path: str = ""
     test_path: str = ""
     data_version: DataVersion = DataVersion.V2_GRAPH
     train_limit: Optional[int] = None
+    val_limit: Optional[int] = None
     test_limit: Optional[int] = None
     force_recalculate_cache: bool = False
     shard_size: int = 50_000
@@ -961,6 +963,11 @@ class RankingConfig(BaseModel):
         return self.data.train_path
 
     @property
+    def val_path(self):
+        """Alias for ``data.val_path``."""
+        return self.data.val_path
+
+    @property
     def test_path(self):
         """Alias for ``data.test_path``."""
         return self.data.test_path
@@ -974,6 +981,11 @@ class RankingConfig(BaseModel):
     def train_limit(self):
         """Alias for ``data.train_limit``."""
         return self.data.train_limit
+
+    @property
+    def val_limit(self):
+        """Alias for ``data.val_limit``."""
+        return self.data.val_limit
 
     @property
     def test_limit(self):

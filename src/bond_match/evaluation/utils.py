@@ -82,7 +82,7 @@ def canonicalize_smiles(smi):
 
     Each ``.``-separated component is parsed, stripped of atom-map numbers
     and explicit hydrogens, and written as canonical non-isomeric SMILES;
-    unparseable components are kept verbatim. Components are sorted before
+    unparseable components are kept verbatim and empty ones dropped. Components are sorted before
     joining so the result is order-independent.
 
     Args:
@@ -93,7 +93,7 @@ def canonicalize_smiles(smi):
     """
     if not smi:
         return ""
-    smiles_list = smi.split(".")
+    smiles_list = [s for s in smi.split(".") if s]
     out_smiles = []
     for s in smiles_list:
         mol = Chem.MolFromSmiles(s)

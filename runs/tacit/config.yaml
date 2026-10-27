@@ -61,6 +61,7 @@ eval:
 data:
   data_version: "v3_blockspace"
   train_path: "data/uspto_mit/train.jsonl"
+  val_path: "data/uspto_mit/val.jsonl"
   test_path: "data/uspto_mit/test.jsonl"
   force_recalculate_cache: false
   shard_size: 100000

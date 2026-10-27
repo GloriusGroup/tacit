@@ -10,10 +10,7 @@ Nick Wierich\*, Niklas Dobberstein\*, Frank Glorius†
 
 <sub>\* These authors contributed equally. &nbsp;·&nbsp; † Corresponding author.</sub>
 
-Reaction outcome prediction at the level of elementary mechanistic steps, trained
-on positive reactions only while retaining the ability to predict *no reaction*.
-
-<img src="docs/static/images/human_vs_tacit.png" alt="TACIT overview" width="560">
+<img src="docs/static/images/pbox.png" alt="TACIT overview" width="800">
 
 [Project page](https://gloriusgroup.github.io/tacit/) · [Models and data (Zenodo)](https://doi.org/10.5281/zenodo.23669984) · [Paper](#citation)
 
@@ -21,27 +18,46 @@ on positive reactions only while retaining the ability to predict *no reaction*.
 
 ---
 
-## Overview
+## Abstract
 
-TACIT predicts reaction outcomes by ranking **bond pairs**. At each elementary
-step, it selects two bonds to break and two bonds to form, or a **stop action**
-when no further step is predicted. Because every unchanged bond pair of a
-positive reaction acts as an implicit negative during training, the model learns
-to distinguish productive from unproductive transformations from positive-only
-data.
+Machine learning models for reaction product prediction have largely been
+trained and evaluated on datasets of successful reactions. While this setting
+allows reaching high accuracy scores, these models generally struggle to
+discriminate between successful and unsuccessful transformations due to the
+lack of negative training data. This critically limits their practical use, as
+reliably recognizing unproductive substrate combinations *in silico* is
+required to accelerate experimental campaigns and save resources in the
+laboratory. While the availability of negative reaction data remains limited to
+date, we show that even purely positive datasets implicitly contain a
+significant amount of information about cases in which no reaction occurs. To
+exploit this, we introduce TACIT (TAckling Chemistry through ImpliciT negative
+learning). While trained on positive-only data, TACIT learns to distinguish
+between productive and unproductive transformations. On two published
+high-throughput experimentation datasets, it outperforms all evaluated reaction
+outcome prediction models in separating successful from failed reactions.
+Crucially, TACIT's accuracy on the popular USPTO-MIT benchmark remains
+competitive, despite its added ability to predict negative reaction outcomes.
 
-Both models are trained on the blockspace-filtered USPTO-MIT training set and
-evaluated on the full, unfiltered test sets. TACIT is trained with the auxiliary
-stop loss, TACIT<sub>no-stop</sub> without it.
+## Results
 
-| | USPTO-MIT top-1 | Chemlex ROC-AUC / PR-AUC | AIChemEco ROC-AUC / PR-AUC |
+| Model | USPTO-MIT top-1 [%] | [Chemlex](https://doi.org/10.1038/s41467-025-59812-0) ROC-AUC / PR-AUC | [AIChemEco](https://doi.org/10.1039/d5sc03364k) ROC-AUC / PR-AUC |
 |---|---|---|---|
-| TACIT | 77.8% | 0.80 / 0.56 | 0.61 / 0.69 |
-| TACIT<sub>no-stop</sub> | 80.4% | 0.67 / 0.35 | 0.53 / 0.59 |
+| TACIT | 77.8 | **0.80** / **0.56** | **0.61** / **0.69** |
+| [MEGAN](https://doi.org/10.1021/acs.jcim.1c00537)<sup>a</sup> | 80.5 | 0.69 / 0.38 | 0.47 / 0.56 |
+| [FlowER](https://doi.org/10.1038/s41586-025-09426-9)<sup>b</sup> | 42.8 | 0.50 / 0.26 | 0.51 / 0.60 |
+| [Molecular Transformer](https://doi.org/10.1021/acscentsci.9b00576)<sup>a,d</sup> | 81.7 | 0.68 / 0.42 | 0.51 / 0.61 |
+| [LocalTransform](https://doi.org/10.1038/s42256-022-00526-z)<sup>a,d</sup> | 80.4 | 0.64 / 0.37 | 0.51 / 0.59 |
+| [ReactionT5](https://doi.org/10.1186/s13321-025-01075-4)<sup>a,c,d</sup> | **95.1**<sup>e</sup> | 0.69 / 0.41 | 0.47 / 0.58 |
 
 USPTO-MIT: all 40,000 test reactions. HTE datasets: all 11,669 (Chemlex) and
-47,015 (AIChemEco) wells, scored by 1 − P(stop) before the first step. A well is
-positive if its conversion or yield is at least 20%.
+47,015 (AIChemEco) wells. A well is positive if its conversion or yield is at
+least 20%, and negative otherwise.
+
+<sup>a</sup> Retrained on the blockspace-filtered USPTO-MIT training set used for TACIT.<br>
+<sup>b</sup> Published checkpoint. Not retrained, since a mechanistic dataset is required for training.<br>
+<sup>c</sup> Pretrained on the Open Reaction Database.<br>
+<sup>d</sup> No stop action. The confidence of the top-1 prediction is used as the score.<br>
+<sup>e</sup> 34,552 of the 40,000 test reactions (86.4%) are contained in the ORD pretraining data. The top-1 accuracy is 97.5% on these and 80.4% on the remaining 5,448 reactions.
 
 ## Installation
 
@@ -52,8 +68,6 @@ Requires **Python 3.11** and a CUDA 12.4 environment. The project uses
 git clone https://github.com/GloriusGroup/tacit.git && cd tacit
 
 uv sync
-
-uv pip install pyg_lib torch_scatter torch_sparse torch_cluster torch_spline_conv -f https://data.pyg.org/whl/torch-2.6.0+cu124.html
 ```
 
 ## Models and data
@@ -63,9 +77,13 @@ The checkpoints and the dataset are archived on
 
 | File | Content | Place at |
 |---|---|---|
-| `tacit.pt` | TACIT weights | `runs/tacit/checkpoints/` |
-| `tacit_no-stop.pt` | TACIT<sub>no-stop</sub> weights | `runs/tacit_no-stop/checkpoints/` |
+| `tacit.pt` | TACIT weights (base model) | `runs/tacit/checkpoints/` |
+| `tacit_no-stop.pt` | TACIT<sub>no-stop</sub> weights (trained without the auxiliary stop loss) | `runs/tacit_no-stop/checkpoints/` |
 | `uspto_mit_blockspace.zip` | USPTO-MIT train, validation and test splits with blockspace decompositions | `data/uspto_mit/` |
+
+```bash
+unzip -j uspto_mit_blockspace.zip '*.jsonl' -d data/uspto_mit
+```
 
 Both checkpoints are the final models after 50 epochs, without any checkpoint
 selection. The configs in `runs/<name>/config.yaml` are the ones used for
@@ -73,27 +91,19 @@ training. The archive's README describes the data fields and the blockspace
 filter (`success` and 1 to 4 elementary steps) that selects the 334,510 training
 reactions.
 
-### Regenerating the blockspace data
+### Recreating the training data
 
-The decompositions were computed with `src/bond_match/blockspace/batch.py`
-from the atom-mapped USPTO-MIT reactions, which every record keeps in
-`metadata.rxn_smiles_original`:
+The data is computed from the original USPTO-MIT splits of
+[Jin et al. (2017)](https://github.com/wengong-jin/nips17-rexgen/tree/master/USPTO).
+Unzip their `data.zip`, take the reaction SMILES column of each split and run
+`batch.py` on it from the repository root.
 
 ```bash
-python -c "import json, pandas as pd; pd.DataFrame({'rxn_smiles': [json.loads(l)['metadata']['rxn_smiles_original'] for l in open('data/uspto_mit/test.jsonl')]}).to_csv('test.csv', index=False)"
-
-python src/bond_match/blockspace/batch.py test.csv -c rxn_smiles -o test_blockspace.jsonl \
-  --strict --mixed --remove_stereo --clean-coo -w 32 -t 10
+unzip data.zip -d jin && (echo rxn_smiles; cut -d' ' -f1 jin/data/test.txt) > test.csv
 ```
-
-`--drop-single-reactant` and `--drop-single-molecule-steps` were not used.
-Records are written in completion order. A rerun reproduces about 99.9% of
-the records exactly: the 10 s timeout per reaction (`-t 10`) depends on machine
-speed, so a few slow reactions can succeed or fail differently. The released
-files predate a fix that marks reactions with zero steps as unsuccessful, so
-267 of their records have `success` set to true with `num_steps` 0. The
-blockspace filter (1 to 4 steps) excludes them either way. Results depend on
-the RDKit version, which is pinned to 2025.9.3.
+```bash
+uv run python src/bond_match/blockspace/batch.py test.csv -c rxn_smiles -o test.jsonl --strict --mixed --remove_stereo --clean-coo -w 32 -t 10
+```
 
 The Zenodo record also contains the retrained baseline models (MEGAN, Molecular
 Transformer, LocalTransform and ReactionT5), each with its upstream license and
@@ -104,9 +114,7 @@ a note on how it was trained.
 ### USPTO-MIT
 
 ```bash
-python src/bond_match/evaluate_ranking.py --config runs/tacit/config.yaml \
-  --checkpoint runs/tacit/checkpoints/tacit.pt \
-  --data data/uspto_mit/test.jsonl --all-entries --save-csv tacit_uspto.csv
+uv run python src/bond_match/evaluate_ranking.py --config runs/tacit/config.yaml --checkpoint runs/tacit/checkpoints/tacit.pt --data data/uspto_mit/test.jsonl --all-entries --save-csv tacit_uspto.csv
 ```
 
 `--all-entries` evaluates all 40,000 test reactions. Reactions that fail the
@@ -117,22 +125,32 @@ RTX 6000, the full test set takes about 45 minutes.
 
 ### HTE datasets
 
+The HTE datasets are not redistributed here. Download them from the original
+authors and convert each into a `wells.csv`:
+
+| Dataset | Source file | License |
+|---|---|---|
+| Chemlex ([Zhong et al., *Nat. Commun.* 2025](https://doi.org/10.1038/s41467-025-59812-0)) | [`Chemlex_Acidamine_Wetlab_Data.xlsx`](https://zenodo.org/records/17596563/files/Chemlex_Acidamine_Wetlab_Data.xlsx) (Zenodo, version of Nov 2025) | CC BY-NC 4.0 |
+| AIChemEco ([Zhang et al., *Chem. Sci.* 2025](https://doi.org/10.1039/d5sc03364k)) | [`all_HTE_with_condition.csv`](https://raw.githubusercontent.com/aichemeco/amide_coupling/fa29d551e732c22186a158b536d0579cf40cc03a/data/all_HTE_with_condition.csv) (GitHub, commit `fa29d55`) | MIT |
+
 ```bash
-python src/bond_match/score_hte.py --config runs/tacit/config.yaml \
-  --checkpoint runs/tacit/checkpoints/tacit.pt \
-  --wells wells.csv --label-column conversion_pct --out tacit_scores.csv
+uv run python src/bond_match/hte_wells.py chemlex Chemlex_Acidamine_Wetlab_Data.xlsx chemlex.csv
+```
+```bash
+uv run python src/bond_match/hte_wells.py aichemeco all_HTE_with_condition.csv aichemeco.csv
 ```
 
-`wells.csv` holds one well per row: a `reaction_smiles` column with all species
+Each row of `wells.csv` is one well: a `reaction_smiles` column with all species
 of the well (substrates, coupling reagent, additive, base and solvent) and the
-expected product, as `reactants>>product`, plus the label column (conversion or
-yield in %). The script prints ROC-AUC, PR-AUC and the share of positive wells
-with the correct top-1 product. The HTE datasets are not redistributed here.
-They are available from their original publications, Chemlex
-([Zhong et al., *Nat. Commun.* 2025](https://doi.org/10.1038/s41467-025-59812-0))
-and AIChemEco
-([Zhang et al., *Chem. Sci.* 2025](https://doi.org/10.1039/d5sc03364k)). The
-paper's SI describes how the wells are converted to reaction SMILES.
+expected product, as `reactants>>product`, plus the label column
+(`conversion_pct` for Chemlex, `yield_pct` for AIChemEco). Then score the wells:
+
+```bash
+uv run python src/bond_match/score_hte.py --config runs/tacit/config.yaml --checkpoint runs/tacit/checkpoints/tacit.pt --wells chemlex.csv --label-column conversion_pct --out tacit_chemlex.csv
+```
+
+The script prints ROC-AUC, PR-AUC and the share of positive wells with the
+correct top-1 product. For AIChemEco, use `--wells aichemeco.csv --label-column yield_pct`.
 
 ### Interactive prediction
 
@@ -172,13 +190,14 @@ Top-1 Correct? True
 ### Training
 
 ```bash
-bash run_train_multigpu.sh runs/tacit/config.yaml 4
+uv run bash run_train_multigpu.sh runs/tacit/config.yaml 4
 ```
 
 The paper models were trained on 4 GPUs with 16 reactions per GPU (effective
 batch size 64) for 50 epochs. The final model is written to
-`runs/<name>/checkpoints/<name>.pt`. Evaluation metrics computed during training
-are only logged and are not used to select a checkpoint.
+`runs/<name>/checkpoints/<name>.pt`. After each epoch the model is evaluated on
+the validation split. These metrics are only logged and are not used to select a
+checkpoint.
 
 ## Repository layout
 
@@ -186,6 +205,7 @@ are only logged and are not used to select a checkpoint.
 src/bond_match/
 ├── train_ranking.py        # training entry point (training/ package, DDP and single GPU)
 ├── evaluate_ranking.py     # evaluation entry point (evaluation/ package, batch and interactive)
+├── hte_wells.py            # converts the published HTE files into wells.csv
 ├── score_hte.py            # HTE well scoring and metrics
 ├── training/               # trainer, EMA, DDP, loss and optimizer helpers
 ├── evaluation/             # evaluator, BE-step operations, inference data, SMILES utilities
@@ -214,6 +234,8 @@ docs/                       # project page (GitHub Pages)
 
 ## License
 
-The code is released under the MIT License (see `LICENSE`). The checkpoints and
-data on Zenodo are released under CC BY 4.0. The retrained baseline models keep
-their upstream licenses.
+The code, the TACIT checkpoints and the data on Zenodo are released under the
+MIT License (see `LICENSE`). The USPTO-MIT splits are by
+[Jin et al. (2017)](https://github.com/wengong-jin/nips17-rexgen) and were
+released under the MIT License. The retrained baseline models keep their
+upstream licenses.

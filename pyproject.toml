@@ -29,6 +29,7 @@ dependencies = [
     "colt5-attention>=0.11.1",
     "st-moe-pytorch>=0.1.8",
     "setuptools<75",
+    "openpyxl>=3.1.5",
 ]
 
 [dependency-groups]
@@ -42,21 +43,12 @@ name = "pytorch-cu124"
 url = "https://download.pytorch.org/whl/cu124"
 explicit = true
 
-# PyG wheel index for optimized kernels (pyg_lib, torch_scatter, ...).
-[[tool.uv.index]]
-name = "pyg-wheels"
-url = "https://data.pyg.org/whl/torch-2.6.0+cu124.html"
-explicit = true
-
 [tool.uv.sources]
 torch = { index = "pytorch-cu124" }
 
 [build-system]
 requires = ["uv_build>=0.9.15,<0.10.0"]
 build-backend = "uv_build"
-
-[tool.uv.extra-build-dependencies]
-torch-cluster = ["torch"]
 
 [tool.pytest.ini_options]
 # Test the in-tree release copy (src layout) rather than any installed package.

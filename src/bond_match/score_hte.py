@@ -8,8 +8,8 @@ is at least ``--threshold``. Wells the model cannot encode are ranked lowest and
     python src/bond_match/score_hte.py --config runs/tacit/config.yaml --checkpoint tacit.pt \\
         --wells wells.csv --label-column conversion_pct --out scores.csv
 
-``wells.csv`` needs a ``reaction_smiles`` column and the label column. The HTE datasets of the paper are not
-redistributed here; see the paper's SI for their sources and preprocessing.
+``wells.csv`` needs a ``reaction_smiles`` column and the label column. ``hte_wells.py`` builds it from the published
+Chemlex and AIChemEco files (see the README).
 """
 
 import argparse

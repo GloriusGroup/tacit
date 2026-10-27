@@ -31,16 +31,16 @@ header.hero {
   text-align: center;
 }
 h1.title {
-  font-family: Georgia, "Times New Roman", serif;
-  font-weight: 700;
-  font-size: clamp(30px, 5vw, 46px);
-  line-height: 1.12;
-  letter-spacing: -0.01em;
+  font-family: "Spectral SC", "Times New Roman", serif;
+  font-weight: 600;
+  font-size: clamp(40px, 7vw, 64px);
+  line-height: 1.1;
+  letter-spacing: 0.03em;
   margin: 0 0 6px;
 }
 h1.title .acronym { color: var(--accent); }
 .subtitle {
-  font-family: Georgia, "Times New Roman", serif;
+  font-family: Spectral, "Times New Roman", serif;
   font-style: italic;
   font-size: clamp(17px, 2.6vw, 22px);
   color: var(--muted);
@@ -67,8 +67,8 @@ h1.title .acronym { color: var(--accent); }
 section { padding: 46px 0; border-bottom: 1px solid var(--line); }
 section:last-of-type { border-bottom: none; }
 h2 {
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 27px; font-weight: 700; letter-spacing: -0.01em;
+  font-family: Spectral, "Times New Roman", serif;
+  font-size: 27px; font-weight: 600; letter-spacing: -0.01em;
   margin: 0 0 18px; text-align: center;
 }
 p { margin: 0 0 16px; }
@@ -84,24 +84,28 @@ figure.plain img { border: none; }
 figcaption { color: var(--muted); font-size: 15px; margin-top: 12px; max-width: 760px; margin-left: auto; margin-right: auto; }
 figcaption b { color: var(--ink); }
 
-.hero-fig { margin: 32px auto 0; max-width: 720px; }
+.hero-fig { margin: 32px auto 0; max-width: 880px; }
 
-.stats {
-  display: flex; flex-wrap: wrap; justify-content: center; gap: 16px;
-  margin: 8px 0 28px;
+section p, figcaption { text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+
+.table-wrap { overflow-x: auto; margin: 8px 0 18px; }
+table.results {
+  width: 100%; border-collapse: collapse;
+  font-size: 15.5px; font-variant-numeric: tabular-nums lining-nums;
 }
-.stat {
-  flex: 1 1 220px; max-width: 280px;
-  background: var(--bg-soft); border: 1px solid var(--line);
-  border-radius: 10px; padding: 18px 14px; text-align: center;
-}
-.stat .num {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  font-size: 32px; font-weight: 700; color: var(--accent); line-height: 1;
-  font-variant-numeric: tabular-nums lining-nums;
-  letter-spacing: -0.01em;
-}
-.stat .lbl { font-size: 13.5px; color: var(--muted); margin-top: 8px; }
+table.results th, table.results td { padding: 7px 10px; text-align: center; white-space: nowrap; }
+table.results th[rowspan], table.results td:first-child { text-align: left; }
+table.results th[rowspan] { vertical-align: bottom; border-bottom: 1px solid var(--ink); }
+table.results thead tr:first-child th { border-top: 2px solid var(--ink); }
+table.results thead tr:last-child th { border-bottom: 1px solid var(--ink); font-weight: 600; color: var(--muted); }
+table.results tbody tr:first-child td { border-bottom: 1px solid var(--line); }
+table.results tbody tr:last-child td { border-bottom: 2px solid var(--ink); }
+table.results td a, table.results th a { color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--line); }
+table.results td a:hover, table.results th a:hover { border-bottom-color: var(--ink); }
+table.results b { color: var(--accent); }
+p.note, ol.notes { font-size: 14.5px; color: var(--muted); }
+ol.notes { list-style: none; padding: 0; margin: 0; }
+ol.notes li { text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
 
 pre.bibtex {
   background: #0f1115; color: #e7e9ec;
