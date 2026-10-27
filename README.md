@@ -73,36 +73,34 @@ uv sync
 ## Models and data
 
 The checkpoints and the dataset are archived on
-[Zenodo](https://doi.org/10.5281/zenodo.23669984):
+[Zenodo](https://doi.org/10.5281/zenodo.23669984). Download them into the
+right folders with
+
+```bash
+bash download.sh
+```
+
+or place them manually:
 
 | File | Content | Place at |
 |---|---|---|
 | `tacit.pt` | TACIT weights (base model) | `runs/tacit/checkpoints/` |
 | `tacit_no-stop.pt` | TACIT<sub>no-stop</sub> weights (trained without the auxiliary stop loss) | `runs/tacit_no-stop/checkpoints/` |
-| `uspto_mit_blockspace.zip` | USPTO-MIT train, validation and test splits with blockspace decompositions | `data/uspto_mit/` |
-
-```bash
-unzip -j uspto_mit_blockspace.zip '*.jsonl' -d data/uspto_mit
-```
-
-Both checkpoints are the final models after 50 epochs, without any checkpoint
-selection. The configs in `runs/<name>/config.yaml` are the ones used for
-training. The archive's README describes the data fields and the blockspace
-filter (`success` and 1 to 4 elementary steps) that selects the 334,510 training
-reactions.
+| `uspto_mit_blockspace.zip` | USPTO-MIT train, validation and test splits with blockspace decompositions | `data/uspto_mit/` (and unzip) |
 
 ### Recreating the training data
 
 The data is computed from the original USPTO-MIT splits of
 [Jin et al. (2017)](https://github.com/wengong-jin/nips17-rexgen/tree/master/USPTO).
-Unzip their `data.zip`, take the reaction SMILES column of each split and run
-`batch.py` on it from the repository root.
 
 ```bash
-unzip data.zip -d jin && (echo rxn_smiles; cut -d' ' -f1 jin/data/test.txt) > test.csv
+wget https://github.com/wengong-jin/nips17-rexgen/raw/master/USPTO/data.zip -O uspto.zip
 ```
 ```bash
-uv run python src/bond_match/blockspace/batch.py test.csv -c rxn_smiles -o test.jsonl --strict --mixed --remove_stereo --clean-coo -w 32 -t 10
+unzip -j uspto.zip -d uspto && (echo rxn_smiles; cut -d' ' -f1 uspto/train.txt) > uspto/train.csv
+```
+```bash
+uv run python src/bond_match/blockspace/batch.py uspto/train.csv -c rxn_smiles -o uspto/train.jsonl --strict --mixed --remove_stereo --clean-coo -w 32 -t 10
 ```
 
 The Zenodo record also contains the retrained baseline models (MEGAN, Molecular
@@ -117,12 +115,6 @@ a note on how it was trained.
 uv run python src/bond_match/evaluate_ranking.py --config runs/tacit/config.yaml --checkpoint runs/tacit/checkpoints/tacit.pt --data data/uspto_mit/test.jsonl --all-entries --save-csv tacit_uspto.csv
 ```
 
-`--all-entries` evaluates all 40,000 test reactions. Reactions that fail the
-blockspace filter are predicted from their reaction SMILES alone. The last line
-reports the top-1 accuracy over all entries. Without `--all-entries`, only the
-32,860 test reactions that pass the filter are evaluated. On one NVIDIA Quadro
-RTX 6000, the full test set takes about 45 minutes.
-
 ### HTE datasets
 
 The HTE datasets are not redistributed here. Download them from the original
@@ -134,34 +126,33 @@ authors and convert each into a `wells.csv`:
 | AIChemEco ([Zhang et al., *Chem. Sci.* 2025](https://doi.org/10.1039/d5sc03364k)) | [`all_HTE_with_condition.csv`](https://raw.githubusercontent.com/aichemeco/amide_coupling/fa29d551e732c22186a158b536d0579cf40cc03a/data/all_HTE_with_condition.csv) (GitHub, commit `fa29d55`) | MIT |
 
 ```bash
+wget https://zenodo.org/records/17596563/files/Chemlex_Acidamine_Wetlab_Data.xlsx
+```
+```bash
+wget https://raw.githubusercontent.com/aichemeco/amide_coupling/fa29d551e732c22186a158b536d0579cf40cc03a/data/all_HTE_with_condition.csv
+```
+```bash
 uv run python src/bond_match/hte_wells.py chemlex Chemlex_Acidamine_Wetlab_Data.xlsx chemlex.csv
 ```
 ```bash
 uv run python src/bond_match/hte_wells.py aichemeco all_HTE_with_condition.csv aichemeco.csv
 ```
 
-Each row of `wells.csv` is one well: a `reaction_smiles` column with all species
-of the well (substrates, coupling reagent, additive, base and solvent) and the
-expected product, as `reactants>>product`, plus the label column
-(`conversion_pct` for Chemlex, `yield_pct` for AIChemEco). Then score the wells:
+Then score the wells:
 
 ```bash
 uv run python src/bond_match/score_hte.py --config runs/tacit/config.yaml --checkpoint runs/tacit/checkpoints/tacit.pt --wells chemlex.csv --label-column conversion_pct --out tacit_chemlex.csv
 ```
-
-The script prints ROC-AUC, PR-AUC and the share of positive wells with the
-correct top-1 product. For AIChemEco, use `--wells aichemeco.csv --label-column yield_pct`.
+```bash
+uv run python src/bond_match/score_hte.py --config runs/tacit/config.yaml --checkpoint runs/tacit/checkpoints/tacit.pt --wells aichemeco.csv --label-column yield_pct --out tacit_aichemeco.csv
+```
 
 ### Interactive prediction
 
-Without `--data`, the evaluator opens an interactive menu:
+```bash
+uv run python src/bond_match/evaluate_ranking.py --config runs/tacit/config.yaml --checkpoint runs/tacit/checkpoints/tacit.pt
+```
 
-1. Enter custom reaction SMILES for prediction.
-2. Evaluate the test set from the config.
-3. Evaluate a random sample from the test set and print detailed prediction
-   information.
-
-Option 3 prints the ranked actions of each step:
 ```txt
 === Ranking Model Eval Menu ===
 1. Interactive SMILES Prediction (Top 5)
@@ -173,17 +164,30 @@ Select option: 3
 Chosen Reaction: [Br:1][c:2]1[cH:3][cH:4][c:5]([F:22])[c:6]([CH:8]([C:9]([CH2:10][O:11][Si:12]([CH3:13])([CH3:14])[C:15]([CH3:16])([CH3:17])[CH3:18])([F:19])[F:20])[OH:21])[cH:7]1.[Cl:44][CH2:45][Cl:46].[Cr:23]([O:24][Cr:25]([O-:26])(=[O:27])=[O:28])([O-:29])(=[O:30])=[O:31].[nH+:32]1[cH:33][cH:34][cH:35][cH:36][cH:37]1.[nH+:38]1[cH:39][cH:40][cH:41][cH:42][cH:43]1>>[Br:1][c:2]1[cH:3][cH:4][c:5]([F:22])[c:6]([C:8]([C:9]([CH2:10][O:11][Si:12]([CH3:13])([CH3:14])[C:15]([CH3:16])([CH3:17])[CH3:18])([F:19])[F:20])=[O:21])[cH:7]1
 
 --- Initial Step Analysis for: CC(C)(C)[Si](C)(C)OCC(F)(F)C(O)c1cc(Br)ccc1F.ClCCl.[O]=[Cr](=[O])([O-])[O][Cr](=[O])(=[O])[O-].c1cc[nH+]cc1.c1cc[nH+]cc1 ---
-Rank  Score    Prob     Action          Match?
+Rank  Score    Prob     Action                    Match?
 ----------------------------------------------------------------------
-1     20.4063   100.00   H#0-O:21 | H#29-C:8 ✅ 0 (0: 96%, 1: 4%)
-2     3.1983   0.00   H#29-C:8 | O:30-Cr:23 ❌ 1 (0: 5%, 1: 95%)
-3     2.6605   0.00   H#16-C:45 | H#29-C:8 ❌ 1 (0: 17%, 1: 83%)
-4     2.5527   0.00   O:30-Cr:23 | O:24-Cr:23 ❌ 1 (0: 6%, 1: 94%)
-5     1.9780   0.00   H#27-C:10 | H#29-C:8 ❌ 0 (0: 96%, 1: 4%)
+1     25.2775  99.91    H#0-O:21 | H#29-C:8       ✅ 0 (0: 96%, 1: 4%)
+2     18.2333  0.09     is_over                   ❌
+3     1.7181   0.00     H#0-O:21 | H#18-C:16      ❌ 0 (0: 89%, 1: 11%)
+4     0.8446   0.00     H#0-O:21 | O:21-C:8       ❌ 0 (0: 90%, 1: 10%)
+5     0.7310   0.00     H#0-O:21 | C:8-C:9        ❌ 0 (0: 82%, 1: 18%)
+
+>>> Continuing to step 2 from current product: [H][H].[H][n+:32]1[c:33]([H])[c:34]([H])[c:35]([H])[c:36]([H])[c:37]1[H].[H][n+:38]1[c:39]([H])[c:40]([H])[c:41]([H])[c:42]([H])[c:43]1[H].[H][c:3]1[c:2]([Br:1])[c:7]([H])[c:6]([C:8]([C:9]([C:10]([H])([H])[O:11][Si:12]([C:13]([H])([H])[H])([C:14]([H])([H])[H])[C:15]([C:16]([H])([H])[H])([C:17]([H])([H])[H])[C:18]([H])([H])[H])([F:19])[F:20])=[O:21])[c:5]([F:22])[c:4]1[H].[H][C:45]([H])([Cl:44])[Cl:46].[Cr:23]([O:24][Cr:25]([O-:26])(=[O:27])=[O:28])([O-:29])(=[O:30])=[O:31]
+
+   --- Iterative Step 2 ---
+   Rank  Score    Prob     Action                    Match?
+   ----------------------------------------------------------------------
+   1     20.3534  100.00   is_over                   ✅
+   2     0.0574   0.00     O:11-Si:12 | Cl:44-LP     ❌ 1 (0: 39%, 1: 61%)
+   3     0.0528   0.00     H#30-C:13 | Cl:44-LP      ✅ 0 (0: 55%, 1: 45%)
+   4     0.0422   0.00     H#14-N:32 | Cl:44-LP      ✅ 0 (0: 52%, 1: 48%)
+   5     0.0421   0.00     H#0-H#29 | Cl:44-LP       ✅ 1 (0: 44%, 1: 56%)
+   >>> Stopping: Model selected is_over
 
 --- Final Result ---
 Steps applied: 1
 Stop reason: Model selected is_over stop action
+Pred Product: [Cr:23]([O:24][Cr:25]([O-:26])(=[O:27])=[O:28])([O-:29])(=[O:30])=[O:31].[H][C:45]([H])([Cl:44])[Cl:46].[H][c:3]1[c:2]([Br:1])[c:7]([H])[c:6]([C:8]([H])([C:9]([C:10]([H])([H])[O:11][Si:12]([C:13]([H])([H])[H])([C:14]([H])([H])[H])[C:15]([C:16]([H])([H])[H])([C:17]([H])([H])[H])[C:18]([H])([H])[H])([F:19])[F:20])[O:21][H])[c:5]([F:22])[c:4]1[H].[H][n+:32]1[c:33]([H])[c:34]([H])[c:35]([H])[c:36]([H])[c:37]1[H].[H][n+:38]1[c:39]([H])[c:40]([H])[c:41]([H])[c:42]([H])[c:43]1[H]>>[H][H].[H][n+:32]1[c:33]([H])[c:34]([H])[c:35]([H])[c:36]([H])[c:37]1[H].[H][n+:38]1[c:39]([H])[c:40]([H])[c:41]([H])[c:42]([H])[c:43]1[H].[H][c:3]1[c:2]([Br:1])[c:7]([H])[c:6]([C:8]([C:9]([C:10]([H])([H])[O:11][Si:12]([C:13]([H])([H])[H])([C:14]([H])([H])[H])[C:15]([C:16]([H])([H])[H])([C:17]([H])([H])[H])[C:18]([H])([H])[H])([F:19])[F:20])=[O:21])[c:5]([F:22])[c:4]1[H].[H][C:45]([H])([Cl:44])[Cl:46].[Cr:23]([O:24][Cr:25]([O-:26])(=[O:27])=[O:28])([O-:29])(=[O:30])=[O:31]
 Top-1 Correct? True
 ```
 
@@ -192,12 +196,6 @@ Top-1 Correct? True
 ```bash
 uv run bash run_train_multigpu.sh runs/tacit/config.yaml 4
 ```
-
-The paper models were trained on 4 GPUs with 16 reactions per GPU (effective
-batch size 64) for 50 epochs. The final model is written to
-`runs/<name>/checkpoints/<name>.pt`. After each epoch the model is evaluated on
-the validation split. These metrics are only logged and are not used to select a
-checkpoint.
 
 ## Repository layout
 

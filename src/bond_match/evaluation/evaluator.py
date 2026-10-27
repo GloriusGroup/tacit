@@ -1863,7 +1863,8 @@ class Evaluator:
             top_k=top_k,
         )
 
-        if eval_result.predicted_steps > 1 and display.product_smi is not None:
+        stopped = eval_result.stop_reason == StopReason.PREDICTED_IS_OVER
+        if eval_result.predicted_steps + stopped > 1 and display.product_smi is not None:
             self._display_iterative_steps(
                 eval_result, display, meta, mol, target_canon, history_embeddings, top_k
             )
@@ -1917,7 +1918,9 @@ class Evaluator:
         current_state = display.state
         current_smi = display.product_smi
 
-        for step in range(1, eval_result.predicted_steps):
+        # One step past the applied ones shows the ranking in which is_over won.
+        stopped = eval_result.stop_reason == StopReason.PREDICTED_IS_OVER
+        for step in range(1, eval_result.predicted_steps + stopped):
             print(
                 f"\n>>> Continuing to step {step + 1} from current product: {current_smi}"
             )
@@ -2007,7 +2010,7 @@ class Evaluator:
                 return f"{atom.GetSymbol()}:{map_num}"
             return f"{atom.GetSymbol()}#{idx}"
 
-        print(f"{indent}{'Rank':<5} {'Score':<8} {'Prob':<8} {'Action':<15} {'Match?'}")
+        print(f"{indent}{'Rank':<5} {'Score':<8} {'Prob':<8} {'Action':<25} {'Match?'}")
         print(f"{indent}" + "-" * 70)
 
         final_product = None
@@ -2033,8 +2036,8 @@ class Evaluator:
                     final_product = current_smi
                     is_correct_top1 = match
                 row = (
-                    f"{rank_pos + 1:<5} {score:.4f}   {action.action_prob * 100.0:.2f}   "
-                    f"{'is_over':<15} {match_str}"
+                    f"{rank_pos + 1:<5} {score:<8.4f} {action.action_prob * 100.0:<8.2f} "
+                    f"{'is_over':<25} {match_str}"
                 )
                 print(f"{indent}{color_code}{row}{reset_code}")
                 continue
@@ -2084,8 +2087,8 @@ class Evaluator:
                 b1_str = f"{get_lbl(b1_atoms[0])}-{get_lbl(b1_atoms[1])}"
                 b2_str = f"{get_lbl(b2_atoms[0])}-{get_lbl(b2_atoms[1])}"
                 row = (
-                    f"{rank_pos + 1:<5} {score:.4f}   {action.action_prob * 100.0:.2f}   "
-                    f"{(b1_str + ' | ' + b2_str):<15} {match_str} {swap_type} {swap_dist}"
+                    f"{rank_pos + 1:<5} {score:<8.4f} {action.action_prob * 100.0:<8.2f} "
+                    f"{(b1_str + ' | ' + b2_str):<25} {match_str} {swap_type} {swap_dist}"
                 )
                 print(f"{indent}{color_code}{row}{reset_code}")
             except Exception as e:
