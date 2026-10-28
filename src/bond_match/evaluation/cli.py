@@ -96,15 +96,12 @@ def main():
 
         if choice == "1":
             smi = input("\nEnter SMILES: ").strip()
-            cat = input("Enter catalyst SMILES (leave empty for none): ").strip()
             if smi:
                 try:
                     if ">>" in smi:
                         entry = {"reaction_smiles": smi, "success": True}
                     else:
                         entry = {"reaction_smiles": smi + ">>", "success": True}
-                    if cat:
-                        entry["metadata"] = {"cat": cat}
                     evaluator.evaluate_single(entry=entry)
                 except Exception as e:
                     print(f"Error: {e}")

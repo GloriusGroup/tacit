@@ -1886,7 +1886,7 @@ class Evaluator:
                 "Immediate is_over correct? "
                 f"{eval_result.stop_reason == StopReason.PREDICTED_IS_OVER and eval_result.predicted_steps == 0 and eval_result.is_match}"
             )
-        print(f"Top-1 Correct? {eval_result.is_match}")
+        print(f"Top-1 Correct? {eval_result.is_match if target_canon else 'n/a'}")
 
         return Chem.MolToSmiles(display_mol), final_product, eval_result.is_match
 
@@ -2029,7 +2029,7 @@ class Evaluator:
                     if target_canon
                     else False
                 )
-                match_str = "\u2705" if match else "\u274c"
+                match_str = ("\u2705" if match else "\u274c") if target_canon else "n/a"
                 color_code = "\033[92m" if match and rank_pos == 0 else ""
                 reset_code = "\033[0m"
                 if rank_pos == 0:
@@ -2065,7 +2065,7 @@ class Evaluator:
                 if not result.success:
                     continue
 
-                match_str = ""
+                match_str = "n/a"
                 color_code = ""
                 reset_code = "\033[0m"
 
