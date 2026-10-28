@@ -12,6 +12,11 @@ Nick Wierich\*, Niklas Dobberstein\*, Frank Glorius†
 
 <img src="docs/static/images/pbox.png" alt="TACIT overview" width="800">
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23669984.svg)](https://doi.org/10.5281/zenodo.23669984)
+[![Project page](https://img.shields.io/badge/project-page-blue.svg)](https://gloriusgroup.github.io/tacit/)
+
 [Project page](https://gloriusgroup.github.io/tacit/) · [Models and data (Zenodo)](https://doi.org/10.5281/zenodo.23669984) · [Paper](#citation)
 
 </div>
@@ -37,6 +42,20 @@ high-throughput experimentation datasets, it outperforms all evaluated reaction
 outcome prediction models in separating successful from failed reactions.
 Crucially, TACIT's accuracy on the popular USPTO-MIT benchmark remains
 competitive, despite its added ability to predict negative reaction outcomes.
+
+## Quickstart
+
+Install, download the checkpoints and data, and evaluate TACIT on the USPTO-MIT test set:
+
+```bash
+git clone https://github.com/GloriusGroup/tacit.git && cd tacit
+
+uv sync
+
+uv run python download_zenodo.py
+
+uv run python src/bond_match/evaluate_ranking.py --config runs/tacit/config.yaml --checkpoint runs/tacit/checkpoints/tacit.pt --data data/uspto_mit/test.jsonl --all-entries --save-csv tacit_uspto.csv
+```
 
 ## Results
 
@@ -77,7 +96,7 @@ The checkpoints and the dataset are archived on
 right folders with
 
 ```bash
-bash download.sh
+uv run python download_zenodo.py
 ```
 
 or place them manually:
@@ -95,11 +114,9 @@ The data is computed from the original USPTO-MIT splits of
 
 ```bash
 wget https://github.com/wengong-jin/nips17-rexgen/raw/master/USPTO/data.zip -O uspto.zip
-```
-```bash
+
 unzip -j uspto.zip -d uspto && (echo rxn_smiles; cut -d' ' -f1 uspto/train.txt) > uspto/train.csv
-```
-```bash
+
 uv run python src/bond_match/blockspace/batch.py uspto/train.csv -c rxn_smiles -o uspto/train.jsonl --strict --mixed --remove_stereo --clean-coo -w 32 -t 10
 ```
 
@@ -123,18 +140,15 @@ authors and convert each into a `wells.csv`:
 | Dataset | Source file | License |
 |---|---|---|
 | Chemlex ([Zhong et al., *Nat. Commun.* 2025](https://doi.org/10.1038/s41467-025-59812-0)) | [`Chemlex_Acidamine_Wetlab_Data.xlsx`](https://zenodo.org/records/17596563/files/Chemlex_Acidamine_Wetlab_Data.xlsx) (Zenodo, version of Nov 2025) | CC BY-NC 4.0 |
-| AIChemEco ([Zhang et al., *Chem. Sci.* 2025](https://doi.org/10.1039/d5sc03364k)) | [`all_HTE_with_condition.csv`](https://raw.githubusercontent.com/aichemeco/amide_coupling/fa29d551e732c22186a158b536d0579cf40cc03a/data/all_HTE_with_condition.csv) (GitHub, commit `fa29d55`) | MIT |
+| AIChemEco ([Zhang et al., *Chem. Sci.* 2025](https://doi.org/10.1039/d5sc03364k)) | [`all_HTE_with_condition.csv`](https://github.com/aichemeco/amide_coupling/raw/fa29d55/data/all_HTE_with_condition.csv) (GitHub, commit `fa29d55`) | MIT |
 
 ```bash
 wget https://zenodo.org/records/17596563/files/Chemlex_Acidamine_Wetlab_Data.xlsx
-```
-```bash
-wget https://raw.githubusercontent.com/aichemeco/amide_coupling/fa29d551e732c22186a158b536d0579cf40cc03a/data/all_HTE_with_condition.csv
-```
-```bash
+
+wget https://github.com/aichemeco/amide_coupling/raw/fa29d55/data/all_HTE_with_condition.csv
+
 uv run python src/bond_match/hte_wells.py chemlex Chemlex_Acidamine_Wetlab_Data.xlsx chemlex.csv
-```
-```bash
+
 uv run python src/bond_match/hte_wells.py aichemeco all_HTE_with_condition.csv aichemeco.csv
 ```
 
@@ -142,8 +156,7 @@ Then score the wells:
 
 ```bash
 uv run python src/bond_match/score_hte.py --config runs/tacit/config.yaml --checkpoint runs/tacit/checkpoints/tacit.pt --wells chemlex.csv --label-column conversion_pct --out tacit_chemlex.csv
-```
-```bash
+
 uv run python src/bond_match/score_hte.py --config runs/tacit/config.yaml --checkpoint runs/tacit/checkpoints/tacit.pt --wells aichemeco.csv --label-column yield_pct --out tacit_aichemeco.csv
 ```
 
