@@ -14,10 +14,9 @@ Nick Wierich\*, Niklas Dobberstein\*, Frank Glorius†
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23669984.svg)](https://doi.org/10.5281/zenodo.23669984)
+[![DOI](https://img.shields.io/badge/DOI-10.26434%2Fchemrxiv.15011216%2Fv1-b31b1b.svg)](https://doi.org/10.26434/chemrxiv.15011216/v1)
+[![Zenodo](https://img.shields.io/badge/Zenodo-10.5281%2Fzenodo.23669984-1682D4.svg)](https://doi.org/10.5281/zenodo.23669984)
 [![Project page](https://img.shields.io/badge/project-page-blue.svg)](https://gloriusgroup.github.io/tacit/)
-
-[Project page](https://gloriusgroup.github.io/tacit/) · [Models and data (Zenodo)](https://doi.org/10.5281/zenodo.23669984) · [Paper](#citation)
 
 </div>
 
@@ -236,10 +235,12 @@ docs/                       # project page (GitHub Pages)
 
 ```bibtex
 @article{tacit,
-  title  = {Implicit Learning: Reaction Outcome Prediction from Positive-Only Data},
-  author = {Wierich, Nick and Dobberstein, Niklas and Glorius, Frank},
-  year   = {2026},
-  note   = {TACIT: TAckling Chemistry through ImpliciT negative learning}
+  title   = {Implicit Learning: Reaction Outcome Prediction from Positive-Only Data},
+  author  = {Wierich, Nick and Dobberstein, Niklas and Glorius, Frank},
+  journal = {ChemRxiv},
+  year    = {2026},
+  doi     = {10.26434/chemrxiv.15011216/v1},
+  note    = {TACIT: TAckling Chemistry through ImpliciT negative learning}
 }
 ```
 

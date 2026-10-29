@@ -41,7 +41,6 @@ h1.title {
 h1.title .acronym { color: var(--accent); }
 .subtitle {
   font-family: Spectral, "Times New Roman", serif;
-  font-style: italic;
   font-size: clamp(17px, 2.6vw, 22px);
   color: var(--muted);
   margin: 0 auto 26px;
